@@ -96,3 +96,15 @@ Birden fazla ihlal olursa hangisi sebep gösterilmeli
  bekleyebilirim dedi mi son seçenek
 
  validation py yazdım domain içersine 
+ gelelim toolları yazmaya
+ ilk olarak search_products yazdım ve testlerini yaptım
+ search products napıyor kullanıcının cümlsine göre en uygun ürünleri bulup listeliyor 
+ dbden 48 tane ürünü alıyor
+ soruguyu sadeleştiriyor
+ filtreliyor
+ puanlıyor 
+ ve results veriyor 
+ PLUS TUZAĞI BURADA*****
+ STOKSUZ ÜRÜN GİZLENMEME TUZAĞI BURADA****
+ TÜRKÇE KARAKTER BURADA****
+ EŞLEŞME KANITI BURADA***
