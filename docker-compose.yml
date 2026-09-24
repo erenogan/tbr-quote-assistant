@@ -21,6 +21,7 @@ services:
       - "8000:8000"
     volumes:
       - ./backend:/app
+      - ./db:/db:ro
     depends_on:
       db:
         condition: service_healthy

@@ -4,7 +4,7 @@ from app.config import settings
 
 pool = ConnectionPool(
     settings.database_url,
-    kwargs={"row_factory": dict_row, "options": "-c search_path=case_seed"},
+    kwargs={"row_factory": dict_row, "options": "-c search_path=case_seed","prepare_threshold": None,},
     open=True,
 )
 
