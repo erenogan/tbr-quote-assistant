@@ -42,3 +42,24 @@ replaced/removed/active=false kullanarak bu durumu çözeceğim gibi duruyor hen
 Fiyat limiti kuralı----------
 burası önemli gibi geldi bu yüzden dikkat et fıyat kuralını ihlal etmek diskalifiye sebebi çünkü bu yüzden limiti regex ile yakalayıp context içerisinekoyabilirsin add ve replace ortak bir fonksiyonla bunu kontrol eder backorderdan önce kontrol edilir 
 
+Message_id NULL olabiliyor bu nasıl mümkün olabilir diye araştırma yaptım önüme çıkan sonuç testlerden kaynaklandığını söylüyor örneğin test yaparken toolu sohbet ya da mesaj olmadan çağırıyoruz bu yüzden message_id NULL olabiliyor**********
+
+
+APPSCHEMA ile yukarıda ekleyeceğim tüm tabloları ve kolonları ekledim*"*"*"*"*""*
+
+Şimdi FAZ1B ADIM 2 GEÇİYORUM
+
+burada mekanik işlemler olacak dikkat et.
+DB erişimi için 2 tane seçenek var ORM ve psycopg orm benim eklediğim özelliklei saklıyor ancak ben sistemin bunları eklediğimde nasıl tepki verdiğini görmek istiyorum ve anlatabilmek bu yüzden psycopg ama burada bunun bir bedeli var sql'i elle yazacağım.
+
+Şuanda requirements dosyasını oluşturdum 24.09.13.25
+dockerfile dosyasını oluşturdum host aşamasını 0.0..0 yaptım şuana kadar ki projelerimde hep 127.0.0.1 idi bu yüzden araştırma yaptım. 127 olan sadece içerden gelen istekleri kabul ediyor çoklu platformda telefondan ya da tarayıcıdıan gelen isteği reddediyor ancak 0.0.0.0 her yerden kabul ediyor.******YENİ BİR BİLGİ 
+
+config.py dosyasını oluşturdum bu dosya otomatik veri okumama eksik ayar okumama yarayacak. yani ayarları okuyacak
+
+db.py ekledim burası veritabanı ile bağlantılarını yönetecek
+burada transaciton bağlatnısına dikkat et pdfte mutasyon ile ilgili bir tuzak vardı bu yüzden burada with bloğu kullanılabilir blok başarıyla biterse commit at olmazsa rollback yap sonra bağlantı havuza geri dönsün her iki durumda da
+
+ve main.py ekledim sunucuyu ayağ kaldırıyoruz dockerfile dosyasındakı app.main de bunu referans alıyor zaten çerisine mode ekledim return içine çünkü yine deterministik bir yapı kaynaklı bence sistem deterministik istendiği için sürekli fallback çalışıyor mu bunu görebilmek istiyoruz
+
+
