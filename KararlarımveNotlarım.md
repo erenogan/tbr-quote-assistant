@@ -63,6 +63,8 @@ burada transaciton bağlatnısına dikkat et pdfte mutasyon ile ilgili bir tuzak
 ve main.py ekledim sunucuyu ayağ kaldırıyoruz dockerfile dosyasındakı app.main de bunu referans alıyor zaten çerisine mode ekledim return içine çünkü yine deterministik bir yapı kaynaklı bence sistem deterministik istendiği için sürekli fallback çalışıyor mu bunu görebilmek istiyoruz
 
 
-her testten sonra veritabanının tüm şemasını yok edip tekrar baştan yüklemek . bunun bedeli var hert test biraz yavaşlar ama toplamda 30 40 tane test var zaten 
+her testten sonra veritabanının tüm şemasını yok edip tekrar baştan yüklemek . bunun bedeli var hert test biraz yavaşlar ama toplamda 30 40 tane test var zaten bu yüzden create test dp ekledim tbr test ile çalıştırdık 
+conftest ekledim her testin başında case_seed şeması siliniyor ve yeniden çalışıyor.
+
 
 
