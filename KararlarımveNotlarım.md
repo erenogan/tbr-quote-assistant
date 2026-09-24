@@ -66,5 +66,33 @@ ve main.py ekledim sunucuyu ayağ kaldırıyoruz dockerfile dosyasındakı app.m
 her testten sonra veritabanının tüm şemasını yok edip tekrar baştan yüklemek . bunun bedeli var hert test biraz yavaşlar ama toplamda 30 40 tane test var zaten bu yüzden create test dp ekledim tbr test ile çalıştırdık 
 conftest ekledim her testin başında case_seed şeması siliniyor ve yeniden çalışıyor.
 
+FAZ 2 GEÇİŞ YAPIYORUM
+
+bu aşamada iş kurallarını ekleyeceğim 6 tool ekleyeceğim ve bunların testlerini 
+
+İLK FONKSİYON validation fiyat limiti stok ve backorder kontrolünü yapacak
+product customer max_price user accepts
+add_to_quote ve replace_witj_alternative bunu çağırır
+
+fiyat 9000 limit 9000 stok 2 allow backorder - bekleyebilirim - aktif evet eklenebiir evet  backorder hayır sebep -
+
+fiyat 8000 limit 10000 stok 0 allow backorder true bekleyebilirim - aktif hayır eklenebilir hayır backorder hayır sebep kullanıcı demedi 
+
+fiyat 8000 limit 10000 stok 0 allowbackorder false bekelyebilirim evet  aktif hayır eklenebilir hayır sebep  isbackorder
+
+fiyat 8000 limit 10000 stok 0 allow true bekleyebilirim evet aktif evet eklenebilir evet  sebep -
+ fiyat 8000 limit 7000 stok 0 allow true bekleyebilirim evet aktif hayır eklenebilir hayır sebep out of the stock
+
+fiyat 8000 limit 10000 stok 0 allowtrue bekleyebilirim evet akfif hayır eklenebilir hayır sebep inactiv
+
+yazdığım test senaryoları-----------üsttekiler
 
 
+Birden fazla ihlal olursa hangisi sebep gösterilmeli 
+ ürün pasifse ilk gerekçe bu inactive
+ fiyat limiti ikinci seenek
+ stok üçüncü seçenek
+ backorder dört
+ bekleyebilirim dedi mi son seçenek
+
+ validation py yazdım domain içersine 
