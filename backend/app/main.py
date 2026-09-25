@@ -1,7 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.activity import router as activity_router
+from app.api.catalog import router as catalog_router
 from app.api.chat import router as chat_router
+from app.api.quotes import router as quotes_router
 from app.config import settings
 from app.db import pool
 
@@ -12,6 +15,9 @@ app = FastAPI(title="TBR Teklif Asistanı")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 app.include_router(chat_router)
+app.include_router(quotes_router)
+app.include_router(catalog_router)
+app.include_router(activity_router)
 
 
 @app.get("/health")
