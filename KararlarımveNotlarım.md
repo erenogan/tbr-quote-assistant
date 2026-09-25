@@ -108,3 +108,16 @@ Birden fazla ihlal olursa hangisi sebep gösterilmeli
  STOKSUZ ÜRÜN GİZLENMEME TUZAĞI BURADA****
  TÜRKÇE KARAKTER BURADA****
  EŞLEŞME KANITI BURADA***
+
+get_knowledge_entries ekledim 
+
+get_quote kısmı zor dikkat
+indirimlerin üst üste binme prblemi var
+indirim yok kurallarına dikkat 
+partner dışında bir de aksesuar indirimi var aksesuar indirimi pricerules dbsine göre herkese uygulanıyor partnerlere değil
+kategori tuzağına dikkat 
+indirim yüzdeliklerini toplamayı seçtim 
+
+addquote geçiyorum burada çok fazla tuzak ve düzeltmem gereken durum var
+araştırmama göre check then act race mantığı kullanılabilir yani kontrol et sonrayap
+
