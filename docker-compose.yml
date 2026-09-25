@@ -25,3 +25,14 @@ services:
     depends_on:
       db:
         condition: service_healthy
+
+  web:
+    build:
+      context: ./web
+      args:
+        # Tarayıcı backend'e bilgisayarın portundan ulaşır (Docker ağının içinden değil).
+        VITE_API_URL: http://localhost:8000
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend

@@ -156,14 +156,21 @@ class Router:
             return None
         return best
 
-    def suggest_substitutes(self, product: dict) -> None:
+    def suggest_substitutes(self, product: dict, reason: str = "out_of_stock") -> None:
+        """Stokta olmayan ürün için stoklu muadilleri önerir (KNE-STOCK-001-SUP)."""
         subs = self.load_products(product["substitute_product_ids"])
         in_stock = [subs[i] for i in product["substitute_product_ids"] if i in subs and subs[i]["stock_qty"] > 0]
-        msg = f"{product['name_tr']} şu anda stokta yok; stok kuralı gereği teklife eklemedim."
+        if reason == "backorder_not_allowed":
+            msg = (f"{product['name_tr']} şu anda stokta yok ve bu müşteri için bekleyen sipariş "
+                   "açılamadığından teklife eklemedim.")
+        else:
+            msg = f"{product['name_tr']} şu anda stokta yok; stok kuralı gereği teklife eklemedim."
         if in_stock:
             msg += " Stoklu alternatifler: " + ", ".join(
                 f"{p['name_tr']} ({tl(p['price_try'])})" for p in in_stock) + "."
-        self.reply.say(msg + " Beklemeyi kabul ederseniz bunu açıkça belirtin.")
+        if reason == "out_of_stock":
+            msg += " Beklemeyi kabul ederseniz bunu açıkça belirtin."
+        self.reply.say(msg)
 
     # ---------- mutasyonlar ----------
     def do_add(self, product: dict, quantity: int, intent: Intent) -> None:
@@ -175,8 +182,12 @@ class Router:
         )
         self.product_source(product)
         if not res.ok:
-            self.reply.say(res.error["message"])
-            if res.error["code"] in ("out_of_stock", "backorder_not_allowed"):
+            code = res.error["code"]
+            if code in ("out_of_stock", "backorder_not_allowed") and "substitute_product_ids" in product:
+                self.suggest_substitutes(product, code)   # sadece "hayır" deme, alternatif sun
+            else:
+                self.reply.say(res.error["message"])
+            if code in ("out_of_stock", "backorder_not_allowed"):
                 self.cite("stock_rule")
             if res.error["code"] == "price_limit":
                 self.cite("price_ceiling")

@@ -1,0 +1,178 @@
+/* Renk bilgi taşır: mavi = sistemin olağan işleyişi, kırmızı = bir kural devreye girdi
+   (kasanın reddettiği deneme, değiştirilen/çıkarılan satır, stokta olmayan ürün). */
+:root {
+  --ink: #16213a;          /* ana metin: koyu lacivert */
+  --muted: #5d6882;
+  --paper: #f3f5f9;        /* sayfa zemini: soğuk açık gri */
+  --surface: #ffffff;
+  --line: #d8deea;
+  --blue: #1d4ed8;         /* The Blue */
+  --blue-soft: #e8eefc;
+  --red: #c9302c;          /* The Red: sadece kural/ret anlamında */
+  --red-soft: #fcebea;
+  --radius-s: 4px;
+  --radius-m: 8px;
+  font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--ink);
+  background: var(--paper);
+  font-size: 15px;
+  line-height: 1.5;
+}
+* { box-sizing: border-box; }
+body { margin: 0; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+.shell { min-height: 100vh; display: flex; flex-direction: column; }
+
+/* Üst çubuk: marka adının iki rengi, arayüzün renk sistemini de tanıtır. */
+.topbar {
+  display: flex; align-items: center; gap: 40px; padding: 0 32px;
+  background: var(--surface); border-bottom: 1px solid var(--line);
+}
+.brand { display: flex; align-items: baseline; gap: 6px; padding: 18px 0; }
+.brand-blue { color: var(--blue); font-weight: 700; font-size: 20px; letter-spacing: -0.01em; }
+.brand-red { color: var(--red); font-weight: 700; font-size: 20px; letter-spacing: -0.01em; }
+.brand-sub { color: var(--muted); margin-left: 10px; font-size: 14px; }
+.tabs { display: flex; gap: 4px; align-self: stretch; }
+.tab {
+  border: 0; background: none; padding: 0 14px; cursor: pointer; color: var(--muted);
+  border-bottom: 3px solid transparent; font-weight: 500;
+}
+.tab:hover { color: var(--ink); }
+.tab.active { color: var(--ink); border-bottom-color: var(--blue); }
+
+.content { flex: 1; padding: 28px 32px 48px; max-width: 1400px; width: 100%; margin: 0 auto; }
+.split { display: grid; grid-template-columns: 300px 1fr; gap: 28px; align-items: start; }
+.stack { display: grid; gap: 36px; }
+
+.section-title { font-size: 16px; font-weight: 600; margin: 0 0 12px; }
+.section-head { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; }
+.count { color: var(--muted); font-weight: 400; margin-left: 4px; }
+.lead { color: var(--muted); margin: -4px 0 16px; max-width: 70ch; }
+.muted { color: var(--muted); }
+.empty { color: var(--muted); padding: 24px 0; }
+
+/* Sol liste */
+.list ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.row-button {
+  width: 100%; text-align: left; background: none; border: 0; padding: 10px 12px;
+  border-left: 3px solid transparent; border-radius: 0 var(--radius-s) var(--radius-s) 0; cursor: pointer;
+  display: grid; gap: 1px;
+}
+.row-button:hover { background: var(--surface); }
+.row-button.selected { background: var(--surface); border-left-color: var(--blue); }
+.row-main { font-weight: 600; font-variant-numeric: tabular-nums; }
+.row-sub { font-size: 14px; }
+.row-meta { font-size: 13px; color: var(--muted); }
+
+/* Teklif detayı */
+.detail { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-m); padding: 24px 28px; min-height: 400px; }
+.detail-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+.quote-id { font-size: 30px; font-weight: 700; margin: 0; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.customer { margin: 2px 0 0; color: var(--muted); }
+.live { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); margin: 6px 0 0; }
+.live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--blue); }
+@media (prefers-reduced-motion: no-preference) {
+  .live-dot { animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: 0.25; } }
+}
+
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+th { text-align: left; font-size: 13px; font-weight: 500; color: var(--muted); padding: 8px 10px; border-bottom: 1px solid var(--line); }
+td { padding: 12px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.num { text-align: right; white-space: nowrap; }
+.strong { font-weight: 600; }
+.product-name { display: block; font-weight: 500; }
+.product-id { font-size: 13px; color: var(--muted); font-weight: 400; }
+.rules { font-size: 14px; color: var(--blue); }
+.tag { display: inline-block; margin-left: 8px; font-size: 12px; padding: 1px 8px; border-radius: 10px; }
+.tag.waiting { background: var(--blue-soft); color: var(--blue); }
+
+/* Pasif satırlar silinmez: üstü çizili ve kırmızı notla görünür. */
+tr.inactive td { color: var(--muted); }
+tr.inactive .product-name, tr.inactive td.num { text-decoration: line-through; text-decoration-color: var(--red); }
+.status-note { display: block; margin-top: 4px; font-size: 13px; color: var(--red); text-decoration: none; }
+
+/* Değişiklik vurgusu: mobilden gelen bir değişiklik web'de belirdiğinde. */
+@media (prefers-reduced-motion: no-preference) {
+  tr.changed td { animation: flash 1.6s ease-out; }
+  @keyframes flash { from { background: var(--blue-soft); } to { background: transparent; } }
+}
+
+.totals { margin: 20px 0 0 auto; width: 320px; display: grid; gap: 6px; font-variant-numeric: tabular-nums; }
+.totals div { display: flex; justify-content: space-between; }
+.totals dt { color: var(--muted); }
+.totals dd { margin: 0; }
+.totals .grand { border-top: 2px solid var(--ink); padding-top: 8px; margin-top: 4px; font-size: 18px; font-weight: 700; }
+.totals .grand dt { color: var(--ink); }
+.footnote { text-align: right; font-size: 13px; color: var(--muted); margin: 10px 0 0; }
+
+/* Veri tabloları */
+.table-scroll { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-m); }
+.data td, .data th { padding-left: 16px; }
+td.out { color: var(--red); font-weight: 500; }
+.toggle { display: flex; gap: 8px; align-items: center; font-size: 14px; color: var(--muted); cursor: pointer; white-space: nowrap; }
+
+/* Formlar */
+.form {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px 20px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-m); padding: 24px;
+}
+.field { display: grid; gap: 6px; }
+.field.wide { grid-column: span 2; }
+.field-label { font-size: 14px; font-weight: 500; }
+.hint { font-weight: 400; color: var(--muted); }
+input, select, textarea {
+  border: 1px solid var(--line); border-radius: var(--radius-s); padding: 8px 10px; background: var(--surface); width: 100%;
+}
+textarea { resize: vertical; }
+.form-actions { grid-column: 1 / -1; display: flex; align-items: center; gap: 16px; }
+.primary {
+  background: var(--blue); color: #fff; border: 0; border-radius: var(--radius-s);
+  padding: 10px 18px; font-weight: 600; cursor: pointer;
+}
+.primary:hover { background: #1a44bd; }
+.notice { margin: 0; font-size: 14px; }
+.notice.ok { color: var(--blue); }
+.notice.error { color: var(--red); }
+
+/* Bilgi kayıtları */
+.topics { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 20px; }
+.topic { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-m); padding: 18px 20px; }
+.topic h3 { margin: 0 0 10px; font-size: 15px; }
+.entry + .entry { border-top: 1px solid var(--line); margin-top: 12px; padding-top: 12px; }
+.entry-title { margin: 0; font-weight: 500; }
+.entry-body { margin: 4px 0; font-size: 14px; max-width: 70ch; }
+.entry-source { margin: 0; font-size: 13px; color: var(--muted); }
+
+/* Oturumlar: sohbet balonları ve asistanın adımları */
+.bubble { max-width: 75ch; padding: 10px 14px; border-radius: var(--radius-m); margin: 16px 0 8px; font-size: 14px; }
+.bubble.user { background: var(--paper); }
+.bubble.assistant { background: var(--blue-soft); }
+.who { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 2px; }
+
+/* Arayüzün tek "cesur" öğesi: asistanın adım adım zaman çizelgesi. */
+.timeline { list-style: none; margin: 0 0 0 14px; padding: 0 0 0 22px; border-left: 2px solid var(--line); }
+.step { position: relative; padding: 6px 0 10px; }
+.seq {
+  position: absolute; left: -35px; top: 6px; width: 24px; height: 24px; border-radius: 50%;
+  background: var(--blue); color: #fff; font-size: 12px; font-weight: 600;
+  display: grid; place-items: center; font-variant-numeric: tabular-nums;
+}
+.step.rejected .seq { background: var(--red); }
+.step-title { margin: 0; font-weight: 600; font-size: 14px; }
+.tool-code { font-weight: 400; color: var(--muted); font-size: 12px; margin-left: 8px; }
+.step-input { margin: 2px 0; font-size: 13px; color: var(--muted); white-space: pre-wrap; }
+.step-output { margin: 0; font-size: 13px; color: var(--blue); }
+.step-error { margin: 0; font-size: 13px; color: var(--red); font-weight: 500; }
+
+@media (max-width: 900px) {
+  .topbar { flex-direction: column; align-items: flex-start; gap: 0; padding: 0 16px; }
+  .tabs { overflow-x: auto; width: 100%; }
+  .tab { padding: 12px; white-space: nowrap; }
+  .content { padding: 20px 16px; }
+  .split { grid-template-columns: 1fr; }
+  .form { grid-template-columns: 1fr 1fr; }
+  .detail { padding: 18px; }
+}
