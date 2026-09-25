@@ -113,6 +113,7 @@ class Router:
         return results[0]
 
     def mutation_key(self, tool: str, product_id: str) -> str:
+        # Aynı mesaj tekrar gelirse (retry) aynı anahtar üretilir -> ikinci kez uygulanmaz.
         return f"{self.message_id}:{tool}:{product_id}"
 
     # ---------- ürün bulma ----------
@@ -124,14 +125,15 @@ class Router:
             return None
         results, unavailable = res.output["results"], res.output["unavailable"]
 
+        # Aranan ürün stokta yok mu? (stoksuz eşleşme, stokluların hepsinden daha iyi uyuyorsa)
         top_score = results[0]["score"] if results else 0
         if unavailable and unavailable[0]["score"] > top_score:
             oos = unavailable[0]
             self.product_source(oos)
             if intent.accepts_backorder:
-                return oos 
+                return oos  # kasa, müşterinin izni olup olmadığına karar verecek
             self.cite("stock_rule")
-            if intent.fallback_phrase:  
+            if intent.fallback_phrase:  # "X yoksa Y ekle"
                 self.reply.say(f"{oos['name_tr']} şu anda stokta yok.")
                 res2 = self.r.call("search_products", query=intent.fallback_phrase, locale="tr",
                                    max_price_try=intent.max_price, in_stock_only=True)
@@ -199,7 +201,7 @@ class Router:
         if intent.needs:
             return self.handle_compatibility(intent)
         product = None
-        if intent.refers_to_quote: 
+        if intent.refers_to_quote:  # "aynı okuyucudan", "1 tane daha"
             quote = self.load_quote()
             match = self.match_line(quote, intent.product_phrase) if quote else None
             if match:
@@ -234,7 +236,8 @@ class Router:
         line, product = match
         target, current = intent.quantity, line["quantity"]
         if target > current:
-            self.do_add(product, target - current, intent) 
+            self.do_add(product, target - current, intent)   # "toplam 4 olsun": 1 varsa 3 ekle
+        elif target < current:
             self.do_update(line, product, target)
         else:
             self.product_source(product)
@@ -329,7 +332,7 @@ class Router:
             self.reply.say("Bu soru için kayıtlı bir politika kaydı bulamadım; kaynaksız cevap vermemek "
                            "için yanıtlamıyorum.")
         # Yedek modda cevap, retrieval + teklif durumuna dayanır (KNE-FALL-001).
-        if intent.wants_quote_view or not settings.llm_enabled:
+        if True:  # yedek modda cevap retrieval + teklif durumuna dayanır (KNE-FALL-001)
             quote = self.load_quote()
             if quote and intent.wants_quote_view:
                 self.describe_quote(quote)
@@ -392,9 +395,9 @@ class Router:
                 self.cite("discount_policy")
             if intent.topic == "service_policy":
                 self.cite("service_policy")
-        if not settings.llm_enabled:
-            self.cite("fallback")
-            self.reply.say("(Yedek mod: bu yanıt kayıtlı politika ve teklif verisinden üretildi.)")
+        # Bu beyin çalışıyorsa yedek moddayız (key yok ya da LLM başarısız oldu).
+        self.cite("fallback")
+        self.reply.say("(Yedek mod: bu yanıt kayıtlı politika ve teklif verisinden üretildi.)")
         return self.reply
 
 
@@ -417,16 +420,35 @@ def _save_answer(session_id: str, message_id: str, text: str) -> None:
 
 def handle_message(*, session_id: str, message_id: str, quote_id: str, text: str,
                    channel: str = "mobile", on_event: Callable[[dict], None] | None = None) -> dict:
-    """Bir kullanıcı mesajını uçtan uca işler. SSE endpoint'i ve testler bunu çağırır."""
+    """Bir kullanıcı mesajını uçtan uca işler. SSE endpoint'i ve testler bunu çağırır.
+
+    LLM açıksa önce LLM beyni denenir; herhangi bir sorunda kural tabanlı beyne düşülür.
+    İki beyin de AYNI turnikeyi (runner) kullanır: loglar tek yerde, sıra numaraları kesintisiz.
+    LLM yarıda kalıp router devralsa bile fiş numaraları aynı kalıpta olduğu için
+    hiçbir mutasyon iki kez uygulanmaz.
+    """
     _ensure_session(session_id, quote_id, channel, message_id, text)
     runner = ToolRunner(session_id=session_id, message_id=message_id, on_event=on_event)
     intent = parse_intent(text)
-    reply = Router(runner, quote_id, message_id).run(intent)
+    mode, fallback_reason = "fallback", None
+
+    if settings.llm_enabled:
+        from app.orchestrator.llm import LLMError, run_llm
+        try:
+            out = run_llm(runner, intent, quote_id, message_id)
+            mode = "llm"
+            reply = Reply(parts=[out["text"]], sources=out["sources"], quote=out["quote"])
+        except LLMError as e:
+            fallback_reason = str(e)
+    if mode == "fallback":
+        reply = Router(runner, quote_id, message_id).run(intent)
+
     _save_answer(session_id, message_id, reply.text)
     return {
         "session_id": session_id,
         "message_id": message_id,
-        "mode": "llm" if settings.llm_enabled else "fallback",
+        "mode": mode,
+        "fallback_reason": fallback_reason,
         "intent": intent.action,
         "text": reply.text,
         "sources": reply.sources,
