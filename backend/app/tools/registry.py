@@ -6,6 +6,7 @@ Tool'ları doğrudan çağırmak yerine ToolRunner.call() kullanılır. Böylece
 - hiçbir tool log'u "unutamaz", çünkü log tool'un içinde değil kapıda.
 """
 from dataclasses import dataclass, field
+from typing import Callable
 
 from app.db import pool
 from app.tools.add_to_quote import add_to_quote
@@ -26,6 +27,14 @@ TOOLS = {
     "replace_with_alternative": replace_with_alternative,
 }
 MUTATIONS = {"add_to_quote", "update_quote_item", "replace_with_alternative"}
+
+
+_HIDDEN_INPUTS = {"idempotency_key", "source_message_id"}
+
+
+def summarize_input(kwargs: dict) -> dict:
+    """Kullanıcıya gösterilecek kısa girdi özeti (teknik anahtarlar gizlenir, boşlar atılır)."""
+    return {k: str(v) for k, v in kwargs.items() if k not in _HIDDEN_INPUTS and v not in (None, [], "")}
 
 
 @dataclass
@@ -51,12 +60,19 @@ class ToolRunner:
     """Bir kullanıcı mesajı boyunca yapılan tool çağrılarını yürütür ve loglar."""
     session_id: str | None = None
     message_id: str | None = None
+    on_event: Callable[[dict], None] | None = None   # SSE: tool_start / tool_result
     calls: list[ToolCallResult] = field(default_factory=list)
+
+    def _emit(self, event: dict) -> None:
+        if self.on_event:
+            self.on_event(event)
 
     def call(self, tool_name: str, **kwargs) -> ToolCallResult:
         if tool_name not in TOOLS:
             raise ValueError(f"Bilinmeyen tool: {tool_name}")
         seq = len(self.calls) + 1
+        self._emit({"type": "tool_start", "seq": seq, "tool": tool_name,
+                    "input_summary": summarize_input(kwargs)})
 
         try:
             output = TOOLS[tool_name](**kwargs)
@@ -74,6 +90,11 @@ class ToolRunner:
 
         self._log(result)
         self.calls.append(result)
+        self._emit({
+            "type": "tool_result", "seq": seq, "tool": tool_name, "status": result.status,
+            "quote_delta": result.output.get("delta") if result.ok and result.is_mutation else None,
+            "error": result.error,
+        })
         return result
 
     def _log(self, result: ToolCallResult) -> None:

@@ -135,3 +135,5 @@ eski satırı replaced yapıyoruz ve kurala göre alternatifle değiştirebiliyo
 burada iş kurallarına bi çözüm buldun replaced by item id yani foreign key bunu unutma en başta yapmıştın
 alternatif ürün sepette varsa?
 mevcut olanı 1 arttırarak çözebiliriz buna bir test yazmak lazım
+
+FİYATLAR VERİTABANINDA NUMERIc PYTHONDA DECİMAL BU YÜZDEN FLOAT KULLANMADIM
