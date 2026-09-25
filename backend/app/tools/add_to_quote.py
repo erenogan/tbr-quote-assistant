@@ -1,26 +1,17 @@
-import json
 import uuid
 from decimal import Decimal
 
-from psycopg.types.json import Jsonb
-
 from app.db import pool
 from app.domain.validation import check_product_for_quote
+from app.tools.common import (
+    find_replay, get_active_line, get_customer, get_product,
+    lock_draft_quote, reject, save_receipt,
+)
 from app.tools.errors import ToolError
 
-# Kullanıcıya dönecek Türkçe mesajlar (sebep kodu -> mesaj)
-REJECT_MESSAGES = {
-    "inactive": "Bu ürün şu anda satışta değil.",
-    "price_limit": "Ürün fiyatı belirttiğiniz üst limitin üzerinde.",
-    "out_of_stock": "Ürün stokta yok. Bekleyebilirseniz belirtin; stoklu alternatif de önerebilirim.",
-    "backorder_not_allowed": "Ürün stokta yok ve bu müşteri için bekleyen sipariş açılamıyor.",
-    "insufficient_stock": "Stokta istenen miktar kadar ürün yok.",
-}
 
-
-def _jsonb(data: dict) -> Jsonb:
-    # Decimal gibi JSON'un bilmediği tipleri metne çevirerek yaz.
-    return Jsonb(data, dumps=lambda d: json.dumps(d, default=str))
+def new_item_id(quote_id: str) -> str:
+    return f"QI-{quote_id.removeprefix('Q-')}-{uuid.uuid4().hex[:8]}"
 
 
 def add_to_quote(
@@ -41,66 +32,34 @@ def add_to_quote(
     if quantity <= 0:
         raise ToolError("invalid_quantity", "Miktar 0'dan büyük olmalı.")
 
-    
-    with pool.connection() as conn:
-        
-        quote = conn.execute(
-            "SELECT * FROM quotes WHERE quote_id = %s FOR UPDATE", (quote_id,)
-        ).fetchone()
-        if quote is None:
-            raise ToolError("quote_not_found", f"{quote_id} numaralı teklif bulunamadı.")
-        if quote["status"] != "draft":
-            raise ToolError("quote_not_editable", "Sadece taslak teklifler değiştirilebilir.")
+    with pool.connection() as conn:                      # tek transaction
+        quote = lock_draft_quote(conn, quote_id)         # 1. kilit
+        replay = find_replay(conn, idempotency_key)      # 2. fiş kontrolü (kilitten sonra)
+        if replay:
+            return replay
 
-        
-        previous = conn.execute(
-            "SELECT response FROM idempotency_keys WHERE idempotency_key = %s",
-            (idempotency_key,),
-        ).fetchone()
-        if previous is not None:
-            return {**previous["response"], "replayed": True}
-
-        
-        product = conn.execute(
-            "SELECT * FROM products WHERE product_id = %s", (product_id,)
-        ).fetchone()
-        if product is None:
-            raise ToolError("product_not_found", f"{product_id} ürünü bulunamadı.")
-        customer = conn.execute(
-            "SELECT * FROM customers WHERE customer_id = %s", (quote["customer_id"],)
-        ).fetchone()
-        existing = conn.execute(
-            """
-            SELECT * FROM quote_items
-            WHERE quote_id = %s AND product_id = %s AND status = 'active'
-            """,
-            (quote_id, product_id),
-        ).fetchone()
-
+        product = get_product(conn, product_id)          # 3. oku
+        customer = get_customer(conn, quote["customer_id"])
+        existing = get_active_line(conn, quote_id, product_id)
         quantity_before = existing["quantity"] if existing else 0
         quantity_after = quantity_before + quantity
 
-        
-        decision = check_product_for_quote(
-            product,
-            customer,
+        decision = check_product_for_quote(              # 4. kurallar (TOPLAM miktar)
+            product, customer,
             quantity=quantity_after,
             max_price=max_price_try,
             user_accepts_backorder=user_accepts_backorder,
         )
-        if not decision.allowed:
-            
-            raise ToolError(decision.reason, REJECT_MESSAGES[decision.reason])
+        reject(decision)
 
-        
-        if existing:
+        if existing:                                     # 5. yaz
             conn.execute(
                 "UPDATE quote_items SET quantity = %s WHERE quote_item_id = %s",
                 (quantity_after, existing["quote_item_id"]),
             )
             quote_item_id, action = existing["quote_item_id"], "incremented"
         else:
-            quote_item_id = f"QI-{quote_id.removeprefix('Q-')}-{uuid.uuid4().hex[:8]}"
+            quote_item_id = new_item_id(quote_id)
             conn.execute(
                 """
                 INSERT INTO quote_items (quote_item_id, quote_id, product_id, quantity,
@@ -123,14 +82,6 @@ def add_to_quote(
             "unit_price_try": str(product["price_try"]),
             "replayed": False,
         }
-
-    
-        conn.execute(
-            """
-            INSERT INTO idempotency_keys (idempotency_key, tool_name, quote_id, response)
-            VALUES (%s, 'add_to_quote', %s, %s)
-            """,
-            (idempotency_key, quote_id, _jsonb(response)),
-        )
+        save_receipt(conn, idempotency_key, "add_to_quote", quote_id, response)  # 6. fiş
 
     return response

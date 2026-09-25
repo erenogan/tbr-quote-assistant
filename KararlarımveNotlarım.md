@@ -121,3 +121,17 @@ indirim yüzdeliklerini toplamayı seçtim
 addquote geçiyorum burada çok fazla tuzak ve düzeltmem gereken durum var
 araştırmama göre check then act race mantığı kullanılabilir yani kontrol et sonrayap
 
+update için burada idempotency key yok bu tuzak mı ?
+mutlak değer atarsak bu bir idempotent davranış olur
+yani sistemlerin genelinde bir şeyi arttır diyip mutlak değer atamaktansa onu update yaparak güncellemek daha az sorun yaratır
+scn 004 burada örnekleniyor test diyr ki ethernet fiş yazıcısını 4 adede çıkar diyor ancak sepette 2 var sonuç olarak 6 mı olacak 4 mü olacak test ediyor sonuçta bu bir updade ekleme değil yani idempotent yok
+Verdiğim kararlar
+miktar 0 ise removed etiketi yapıştırdık satır silinmeyecek eski miktar geçmiş olarak kalacak
+kuralı sadece artışta kontrol edeceğiz
+bütçe kontrolü de yokürün değişmez fiyat zaten eklenirken kabul edilmiş durumda
+
+replacewithalternative NOTLARI
+eski satırı replaced yapıyoruz ve kurala göre alternatifle değiştirebiliyoruz 
+burada iş kurallarına bi çözüm buldun replaced by item id yani foreign key bunu unutma en başta yapmıştın
+alternatif ürün sepette varsa?
+mevcut olanı 1 arttırarak çözebiliriz buna bir test yazmak lazım
