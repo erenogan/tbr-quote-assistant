@@ -93,6 +93,7 @@ class ToolRunner:
         self._emit({
             "type": "tool_result", "seq": seq, "tool": tool_name, "status": result.status,
             "quote_delta": result.output.get("delta") if result.ok and result.is_mutation else None,
+            "replayed": result.output.get("replayed") if result.ok and result.is_mutation else None,
             "error": result.error,
         })
         return result

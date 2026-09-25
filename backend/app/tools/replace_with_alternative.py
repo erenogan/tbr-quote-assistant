@@ -86,6 +86,12 @@ def replace_with_alternative(
         response = {
             "quote_id": quote_id,
             "action": "replaced",
+            # PDF: mutasyon olaylarında teklif değişikliği (delta) görünmeli.
+            "delta": {
+                "replaced_product_id": from_product_id,
+                "with_product_id": to_product_id,
+                "quantity": new_quantity,
+            },
             "from": {
                 "quote_item_id": old_line["quote_item_id"],
                 "product_id": from_product_id,
