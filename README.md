@@ -237,14 +237,14 @@ Hibrit yapı : Anahtar var ise önce LLM denenir; herhangi bir sorunda kural tab
 
 LLM karar verir ama yetki sunucudadır:
 
-LLM'in yapabileceği hata	--------------Nasıl Korundu
-Olmayan bir tool çağırmak--------	Kapı sadece 6 tool'u tanır
-Başka müşterinin teklifine dokunmak------	quote_id'yi LLM seçemez; sunucu ekler
+LLM'in yapabileceği hata	---:::-Nasıl Korundu
+Olmayan bir tool çağırmak---:::Kapı sadece 6 tool'u tanır
+Başka müşterinin teklifine dokunmak---:::	quote_id'yi LLM seçemez; sunucu ekler
 Bütçeyi unutmak	------------Bütçe kullanıcının cümlesinden sunucu tarafından çıkarılır; kural tool içinde
-Soru soran kullanıcının teklifini değiştirmek---------	Soru cümlelerinde LLM'e mutasyon araçları gösterilmez
-Teklifte olmayan bir ürüne "aynı / 1 tane daha" diyerek ekleme yapmak-------	Sunucu engeller, router kullanıcıya sorar
-Kaynaksız politika cevabı---------	Reddedilir, router kaynaklı cevap üretir
-Bozuk argüman, döngü, zaman aşımı, API hatası-------	Router devralır (en fazla 6 adım)
+Soru soran kullanıcının teklifini değiştirmek---:::	Soru cümlelerinde LLM'e mutasyon araçları gösterilmez
+Teklifte olmayan bir ürüne "aynı / 1 tane daha" diyerek ekleme yapmak---:::	Sunucu engeller, router kullanıcıya sorar
+Kaynaksız politika cevabı---:::	Reddedilir, router kaynaklı cevap üretir
+Bozuk argüman, döngü, zaman aşımı, API hatası---:::	Router devralır (en fazla 6 adım)
 
 
 Router kural tabanlıdır: cümleden eylem, bütçe, miktar ve "bekleyebilirim" bilgisini çıkarır; en iyi arama sonucu net değilse (puan düşük ya da eşit) değişiklik yapmaz, adayları sayıp sorar.
