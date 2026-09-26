@@ -27,3 +27,11 @@ def test_ambiguous_request_asks_instead_of_guessing():
     r = ask("okuyucu ekle", "Q-1002")
     assert not any(c.tool_name == "add_to_quote" for c in r["tool_calls"])
     assert "emin olamadım" in r["text"]
+
+
+def test_reference_to_missing_item_asks_instead_of_adding():
+    # Q-1003'te sadece Ethernet yazıcı var. "Aynı okuyucudan 2 tane daha" -> atıf boşta kalıyor.
+    r = ask("Aynı kablosuz barkod okuyucudan 2 tane daha ekle.", "Q-1003")
+    assert not any(c.tool_name == "add_to_quote" for c in r["tool_calls"])
+    assert "bulamadım" in r["text"]
+    assert [l["product_id"] for l in get_quote("Q-1003")["lines"]] == ["PRD-PRN-320"]

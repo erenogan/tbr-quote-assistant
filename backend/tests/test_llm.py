@@ -144,3 +144,11 @@ def test_step_limit_falls_back(fake):
     loop = {"tool_calls": [tool_call("get_quote")]}
     fake(*[loop] * llm.MAX_STEPS)
     assert ask("teklifimde ne var?")["mode"] == "fallback"
+
+
+def test_llm_cannot_invent_referenced_item(fake):
+    # "Aynı okuyucudan 2 tane daha" ama Q-1003'te okuyucu yok; LLM yine de eklemeye çalışıyor.
+    fake({"tool_calls": [tool_call("add_to_quote", product_id="PRD-BC-110", quantity=2)]})
+    r = ask("Aynı kablosuz barkod okuyucudan 2 tane daha ekle.", quote_id="Q-1003")
+    assert r["mode"] == "fallback" and "atıf" in r["fallback_reason"]
+    assert lines("Q-1003") == {"PRD-PRN-320": 2}

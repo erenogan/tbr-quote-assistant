@@ -12,6 +12,7 @@ import json
 import httpx
 
 from app.config import settings
+from app.db import pool
 from app.domain.intent import Intent
 from app.tools.registry import MUTATIONS, ToolRunner
 
@@ -27,7 +28,8 @@ Kurallar:
 - Politika, iade, teslimat, garanti, indirim, uyumluluk sorularında MUTLAKA get_knowledge_entries çağır
   ve cevabında kullandığın kaydın knowledge_id'sini köşeli parantezle belirt, örn. [KNE-RET-001].
   Kayıt bulamazsan cevap uydurma; bilmediğini söyle.
-- "aynı", "daha", "sepetteki" gibi ifadelerde önce get_quote ile teklife bak.
+- "aynı", "daha", "sepetteki" gibi ifadelerde önce get_quote ile teklife bak. Atıf yapılan ürün
+  teklifte yoksa yeni ürün EKLEME; kullanıcıya teklifte böyle bir ürün olmadığını söyle ve sor.
 - Bir tool hata dönerse (bütçe, stok) bunu kullanıcıya dürüstçe açıkla; kuralı aşmaya çalışma.
 - Stokta olmayan ürün için stoklu alternatif öner.
 - Emin olmadığın bir değişikliği yapma; kullanıcıya sor.
@@ -110,6 +112,14 @@ def _server_side_args(name: str, args: dict, intent: Intent, quote_id: str, mess
     return args
 
 
+def _is_active_in_quote(quote_id: str, product_id: str | None) -> bool:
+    with pool.connection() as conn:
+        return conn.execute(
+            "SELECT 1 FROM quote_items WHERE quote_id = %s AND product_id = %s AND status = 'active'",
+            (quote_id, product_id),
+        ).fetchone() is not None
+
+
 def _for_llm(result) -> str:
     """Tool sonucunu LLM'e kısa ve JSON olarak geri ver."""
     payload = result.output if result.ok else {"error": result.error}
@@ -138,6 +148,11 @@ def run_llm(runner: ToolRunner, intent: Intent, quote_id: str, message_id: str) 
                 args = json.loads(tc["function"].get("arguments") or "{}")
             except json.JSONDecodeError as e:
                 raise LLMError("LLM bozuk argüman üretti") from e
+            if name == "add_to_quote" and intent.refers_to_quote \
+                    and not _is_active_in_quote(quote_id, args.get("product_id")):
+                # Kullanıcı "aynı / 1 tane daha" diyerek teklifteki bir ürüne atıf yapıyor, ama LLM
+                # teklifte olmayan bir ürünü eklemeye çalışıyor: varsayıma dayalı mutasyon, izin yok.
+                raise LLMError("LLM, teklifte olmayan bir ürünü atıf varmış gibi eklemeye çalıştı")
             result = runner.call(name, **_server_side_args(name, args, intent, quote_id, message_id))
             messages.append({"role": "tool", "tool_call_id": tc["id"], "content": _for_llm(result)})
     raise LLMError("LLM adım sınırını aştı")

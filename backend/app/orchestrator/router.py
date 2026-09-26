@@ -215,8 +215,14 @@ class Router:
         if intent.refers_to_quote:  # "aynı okuyucudan", "1 tane daha"
             quote = self.load_quote()
             match = self.match_line(quote, intent.product_phrase) if quote else None
-            if match:
-                product = match[1]
+            if match is None:
+                # Kullanıcı teklifteki bir ürüne atıf yapıyor ama öyle bir ürün yok.
+                # Varsayımla yeni ürün eklemek yerine sor (KNE-FALL-001: emin olunmayan mutasyon yok).
+                self.reply.say("Bu teklifte, atıf yaptığınız ürüne uyan bir satır bulamadım; bu yüzden "
+                               "bir şey eklemedim. Yeni ürün olarak eklememi isterseniz ürünü açıkça "
+                               "belirterek tekrar yazın (örneğin \"kablosuz barkod okuyucu ekle\").")
+                return
+            product = match[1]
         if product is None:
             product = self.find_product(intent)
         if product is None:
